@@ -1,26 +1,21 @@
-import cv2
-import numpy as np
-import os
-from math import sqrt
-import sys
-import requests
 import configparser
 from utils import *
 
 config = configparser.ConfigParser()
 config.read('config.ini', encoding='UTF-8')
-path = str(config['common']['screenshot_location'])
+path = str(config['common']['screenshot_path'])
 access_token = str(config['oath']['access_token'])
+save_path = str(config['common']['save_path'])
+full_path = os.path.join(save_path, '1.xlsx')
 
-img_path = os.path.join(path, os.listdir(path)[-1])
-print(img_path)
-img = cv2_imread(img_path)
-img = cv2.resize(img, (1920, 1080))
+for img in os.listdir(path):
+    if os.path.splitext(img)[-1] == ".png" or os.path.splitext(img)[-1] == ".jpg":
+        img_path = os.path.join(path, img)
+        img = cv2_imread(img_path)
+        img = cv2.resize(img, (1920, 1080))
 
-img = img_crop(img)
+        img = img_crop(img)
 
-cv2.imshow("houghline", img)
-cv2.waitKey()
-cv2.destroyAllWindows()
+        artifact = get_stat(img, access_token, get_create_date(img_path))
+        artifact.add_to_excel(full_path)
 
-print(get_stat(img, access_token))

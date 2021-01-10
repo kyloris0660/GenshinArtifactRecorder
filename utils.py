@@ -4,9 +4,26 @@ import sys
 import base64
 import requests
 from math import sqrt
+import os
+import pandas as pd
+
+
+def get_create_date(file):
+    """
+    获取圣遗物获取日期
+    :param file: 图像路径
+    :return: 日期，如：2021/1/11
+    """
+    import time
+    # os.stat return properties of a file
+    tmpTime = time.localtime(os.stat(file).st_ctime)
+    return time.strftime('%Y/%m/%d', tmpTime)
 
 
 def cv2_imread(img_path):
+    """
+    中文路径支持
+    """
     return cv2.imdecode(np.fromfile(img_path, dtype=np.uint8), -1)
 
 
@@ -66,6 +83,7 @@ class Artifact:
     vice_stat2_value = ''
     vice_stat3 = ''
     vice_stat3_value = ''
+    date = ''
 
     def __init__(self, name):
         self.name = name
@@ -73,8 +91,37 @@ class Artifact:
     def __str__(self):
         return str(self.__dict__)
 
+    def add_to_excel(self, path):
+        sheet = pd.read_excel(path)
+        insert_column = {'圣遗物名称': self.name,
+                         '圣遗物类型': self.set_pieces,
+                         '主属性': self.main_stat,
+                         '主属性数值': self.main_stat_value,
+                         '星级': self.star,
+                         '等级': self.lv,
+                         '副属性1': self.vice_stat0,
+                         '副属性1数值': self.vice_stat0_value,
+                         '副属性2': self.vice_stat1,
+                         '副属性2数值': self.vice_stat1_value,
+                         '副属性3': self.vice_stat2,
+                         '副属性3数值': self.vice_stat2_value,
+                         '副属性4': self.vice_stat3,
+                         '副属性4数值': self.vice_stat3_value,
+                         '所属套装': self.set_name,
+                         '创建时间': self.date
+                         }
+        sheet = sheet.append(insert_column, ignore_index=True)
+        sheet.to_excel(path, index=False)
 
-def get_stat(img, access_token):
+
+def get_stat(img, access_token, date):
+    """
+    OCR获取数据写入到圣遗物对象
+    :param img: cv2图像对象
+    :param access_token: 百度ai的文字识别token
+    :param date: 圣遗物获取日期
+    :return: 圣遗物对象
+    """
     img = image_to_base64(img)
     params = {"image": img}
     request_url = "https://aip.baidubce.com/rest/2.0/ocr/v1/accurate_basic"
@@ -110,7 +157,7 @@ def get_stat(img, access_token):
         return loc
 
     if response:
-        print(response.json())
+        # print(response.json())
         result = response.json()['words_result']
         result = [str(i['words']).replace('·', '') for i in result]
 
@@ -124,14 +171,15 @@ def get_stat(img, access_token):
         vice_stat_index = get_vice_stat_index(result)
         set_list_index = get_set_list_index(result)
         artifact.vice_stat0 = result[vice_stat_index[0]].split('+')[0]
-        artifact.vice_stat0_value = result[vice_stat_index[0]].split('+')[1]
+        artifact.vice_stat0_value = str(result[vice_stat_index[0]].split('+')[1])
         artifact.vice_stat1 = result[vice_stat_index[1]].split('+')[0]
-        artifact.vice_stat1_value = result[vice_stat_index[1]].split('+')[1]
+        artifact.vice_stat1_value = str(result[vice_stat_index[1]].split('+')[1])
         artifact.vice_stat2 = result[vice_stat_index[2]].split('+')[0]
-        artifact.vice_stat2_value = result[vice_stat_index[2]].split('+')[1]
+        artifact.vice_stat2_value = str(result[vice_stat_index[2]].split('+')[1])
         if len(vice_stat_index) == 4:
             artifact.vice_stat3 = result[vice_stat_index[3]].split('+')[0]
-            artifact.vice_stat3_value = result[vice_stat_index[3]].split('+')[1]
+            artifact.vice_stat3_value = str(result[vice_stat_index[3]].split('+')[1])
         artifact.set_name = result[set_list_index][:-1]
+        artifact.date = date
 
         return artifact
