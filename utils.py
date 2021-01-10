@@ -82,40 +82,56 @@ def get_stat(img, access_token):
     headers = {'content-type': 'application/x-www-form-urlencoded'}
     response = requests.post(request_url, data=params, headers=headers)
 
-    def stat_num_4(result):
+    def get_set_list_index(result):
         """
-        判断副词条数量
+        判断圣遗物套装所在位置
         :param result: OCR结果列表
-        :return: bool值 0代表3词条，1代表4词条
+        :return: int 表示位置
         """
         set_list = ['幸运儿', '游医', '冒险家', '学士', '战狂', '祭冰之人', '奇迹', '勇士之心', '教官', '祭火之人', '赌徒',
                     '祭水之人', '武人', '守护之心', '祭雷之人', '流放者', '行者之心', '炽烈的炎之魔女', '角斗士的终幕礼',
                     '如雷的盛怒', '冰风迷途的勇士', '染血的骑士道', '昔日宗室之仪', '沉沦之心', '悠古的磐岩',
                     '翠绿之影', '流浪大地的乐团', '逆飞的流星', '平息鸣雷的尊者', '渡过烈火的贤人', '被怜爱的少女']
         loc = [i[:-1] in set_list for i in result].index(True)
-        assert loc == 9 or loc == 10
-        return loc - 9
+        return loc
+
+    def get_index(lst, item):
+        return [index for (index, value) in enumerate(lst) if value == item]
+
+    def get_vice_stat_index(result):
+        """
+        判断圣遗物副词条所在位置
+        :param result: OCR结果列表
+        :return: int 表示位置
+        """
+        stat_list = ['攻击力', '生命值', '防御力', '元素精通', '元素充能效率', '暴击率', '暴击伤害', '风元素伤害加成', '火元素伤害加成',
+                     '水元素伤害加成', '雷元素伤害加成', '冰元素伤害加成', '岩元素伤害加成' '物理伤害加成']
+        loc = get_index([i.split('+')[0] in stat_list for i in result], True)[1:]
+        return loc
 
     if response:
+        print(response.json())
         result = response.json()['words_result']
-        result = [str(i['words']) for i in result]
+        result = [str(i['words']).replace('·', '') for i in result]
 
         artifact = Artifact(result[0])
         artifact.set_pieces = result[1]
         artifact.main_stat = result[2]
-        artifact.main_stat_value = int(result[3])
+        artifact.main_stat_value = result[3]
         artifact.star = len(result[4])
         artifact.lv = int(result[5])
-        artifact.vice_stat0 = result[6].split('+')[0][1:]
-        artifact.vice_stat0_value = result[6].split('+')[1]
-        artifact.vice_stat1 = result[7].split('+')[0][1:]
-        artifact.vice_stat1_value = result[7].split('+')[1]
-        artifact.vice_stat2 = result[8].split('+')[0][1:]
-        artifact.vice_stat2_value = result[8].split('+')[1]
-        if stat_num_4(result):
-            artifact.vice_stat3 = result[9].split('+')[0][1:]
-            artifact.vice_stat3_value = result[9].split('+')[1]
-            artifact.set_name = result[10][:-1]
-        else:
-            artifact.set_name = result[9][:-1]
+
+        vice_stat_index = get_vice_stat_index(result)
+        set_list_index = get_set_list_index(result)
+        artifact.vice_stat0 = result[vice_stat_index[0]].split('+')[0]
+        artifact.vice_stat0_value = result[vice_stat_index[0]].split('+')[1]
+        artifact.vice_stat1 = result[vice_stat_index[1]].split('+')[0]
+        artifact.vice_stat1_value = result[vice_stat_index[1]].split('+')[1]
+        artifact.vice_stat2 = result[vice_stat_index[2]].split('+')[0]
+        artifact.vice_stat2_value = result[vice_stat_index[2]].split('+')[1]
+        if len(vice_stat_index) == 4:
+            artifact.vice_stat3 = result[vice_stat_index[3]].split('+')[0]
+            artifact.vice_stat3_value = result[vice_stat_index[3]].split('+')[1]
+        artifact.set_name = result[set_list_index][:-1]
+
         return artifact
