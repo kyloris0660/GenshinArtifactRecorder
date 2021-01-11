@@ -35,6 +35,12 @@ def save_processed_file(path):
             f.write('\n')
 
 
+def add_processed_file(file_name):
+    with open('processed_file.txt', 'a') as f:
+        f.write(file_name)
+        f.write('\n')
+
+
 def load_processed_file():
     processed_item = []
     for line in open('processed_file.txt', 'r'):
@@ -74,9 +80,14 @@ def img_crop(img):
 
     y_len = y_max - y_min
     x_len = x_max - x_min
-    if 800 < y_len < 820 and 480 < x_len < 500:
+    if y_len > 500 > x_len > 480:
         return img[y_min:y_max, x_min:x_max], 1
     else:
+        # print(y_len)
+        # print(x_len)
+        # cv2.imshow('test', img[y_min:y_max, x_min:x_max])
+        # cv2.waitKey()
+        # cv2.destroyAllWindows()
         return img, 0
 
 

@@ -1,4 +1,5 @@
 import configparser
+import time
 from utils import *
 
 config = configparser.ConfigParser()
@@ -38,21 +39,21 @@ artifact_cnt = 0
 for img in os.listdir(path):
     if img not in processed_item:
         if os.path.splitext(img)[-1] == ".png" or os.path.splitext(img)[-1] == ".jpg":
+            file_name = img
             img_path = os.path.join(path, img)
             img = cv2_imread(img_path)
             img = cv2.resize(img, (1920, 1080))
 
             img, have_artifact = img_crop(img)
-            # cv2.imshow('cropped_img', img)
-            # cv2.waitKey(0)
-            # cv2.destroyAllWindows()
+
             if have_artifact:
+                time.sleep(0.5)
                 artifact = get_stat(img, access_token, get_create_date(img_path))
                 name = artifact.add_to_excel(full_path)
                 print('登记新圣遗物：{}'.format(name))
                 artifact_cnt += 1
+                add_processed_file(file_name)
             else:
                 print('图像{}未检测到有效圣遗物'.format(img_path))
 
-save_processed_file(path)
 print('共登记{}件新圣遗物'.format(artifact_cnt))
