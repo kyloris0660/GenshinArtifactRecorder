@@ -27,13 +27,28 @@ def cv2_imread(img_path):
     return cv2.imdecode(np.fromfile(img_path, dtype=np.uint8), -1)
 
 
+def save_processed_file(path):
+    processed_item = [i for i in os.listdir(path)]
+    with open('processed_file.txt', 'w') as f:
+        for i in processed_item:
+            f.write(i)
+            f.write('\n')
+
+
+def load_processed_file():
+    processed_item = []
+    for line in open('processed_file.txt', 'r'):
+        processed_item.append(line.strip('\n'))
+    return processed_item
+
+
 def img_crop(img):
     """
     从图片中裁剪圣遗物面板
     :param img: 输入图像向量， 默认(1920, 1080, 3)
-    :return:  输出图像向量， 大小约为(810, 490, 3)
+    :return:  输出图像向量， 大小约为(810, 490, 3)， 状态位，1为有效
     """
-    assert img.shape[1] / img.shape[0] == 1920 / 1080
+    # assert img.shape[1] / img.shape[0] == 1920 / 1080
 
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     img = cv2.GaussianBlur(img, (3, 3), 0)
@@ -45,19 +60,24 @@ def img_crop(img):
     def distance(x1, x2, y1, y2):
         return sqrt(abs((abs(x2 - x1) ** 2 - abs(y2 - y1) ** 2)))
 
-    min_x1 = sys.maxsize
-    max_x2 = 0
-    min_y1 = sys.maxsize
-    max_y2 = 0
+    x_min = sys.maxsize
+    x_max = 0
+    y_min = sys.maxsize
+    y_max = 0
     for line in lines:
         for x1, y1, x2, y2 in line:
-            if distance(x1, x2, y1, y2) > 400:
-                min_x1 = min(x1, min_x1)
-                max_x2 = max(x2, max_x2)
-                min_y1 = min(y1, min_y1)
-                max_y2 = max(y2, max_y2)
+            if distance(x1, x2, y1, y2) > 320:
+                x_min = min(x_min, x1, x2)
+                x_max = max(x_max, x1, x2)
+                y_min = min(y_min, y1, y2)
+                y_max = max(y_max, y1, y2)
 
-    return img[min_y1:max_y2, min_x1:max_x2]
+    y_len = y_max - y_min
+    x_len = x_max - x_min
+    if 800 < y_len < 820 and 480 < x_len < 500:
+        return img[y_min:y_max, x_min:x_max], 1
+    else:
+        return img, 0
 
 
 def image_to_base64(img_np):
@@ -112,6 +132,7 @@ class Artifact:
                          }
         sheet = sheet.append(insert_column, ignore_index=True)
         sheet.to_excel(path, index=False)
+        return self.name
 
 
 def get_stat(img, access_token, date):
@@ -139,7 +160,7 @@ def get_stat(img, access_token, date):
                     '祭水之人', '武人', '守护之心', '祭雷之人', '流放者', '行者之心', '炽烈的炎之魔女', '角斗士的终幕礼',
                     '如雷的盛怒', '冰风迷途的勇士', '染血的骑士道', '昔日宗室之仪', '沉沦之心', '悠古的磐岩',
                     '翠绿之影', '流浪大地的乐团', '逆飞的流星', '平息鸣雷的尊者', '渡过烈火的贤人', '被怜爱的少女']
-        loc = [i[:-1] in set_list for i in result].index(True)
+        loc = [i in set_list for i in result].index(True)
         return loc
 
     def get_index(lst, item):
@@ -159,7 +180,7 @@ def get_stat(img, access_token, date):
     if response:
         # print(response.json())
         result = response.json()['words_result']
-        result = [str(i['words']).replace('·', '') for i in result]
+        result = [str(i['words']).replace('·', '').replace(':', '') for i in result]
 
         artifact = Artifact(result[0])
         artifact.set_pieces = result[1]
@@ -179,7 +200,7 @@ def get_stat(img, access_token, date):
         if len(vice_stat_index) == 4:
             artifact.vice_stat3 = result[vice_stat_index[3]].split('+')[0]
             artifact.vice_stat3_value = str(result[vice_stat_index[3]].split('+')[1])
-        artifact.set_name = result[set_list_index][:-1]
+        artifact.set_name = result[set_list_index]
         artifact.date = date
 
         return artifact
