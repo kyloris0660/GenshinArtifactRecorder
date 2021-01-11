@@ -8,6 +8,7 @@ path = str(config['common']['screenshot_path'])
 access_token = str(config['oath']['access_token'])
 save_path = str(config['common']['save_path'])
 full_path = os.path.join(save_path, '圣遗物登记表.xlsx')
+remove_screenshot = bool(config['common']['remove_screenshot'])
 
 if not os.path.exists(full_path):
     dic1 = {'圣遗物名称': [],
@@ -53,6 +54,8 @@ for img in os.listdir(path):
                 print('登记新圣遗物：{}'.format(name))
                 artifact_cnt += 1
                 add_processed_file(file_name)
+                if remove_screenshot:
+                    os.remove(img_path)
             else:
                 print('图像{}未检测到有效圣遗物'.format(img_path))
 
