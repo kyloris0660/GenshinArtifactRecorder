@@ -8,7 +8,7 @@ path = str(config['common']['screenshot_path'])
 access_token = str(config['oath']['access_token'])
 save_path = str(config['common']['save_path'])
 full_path = os.path.join(save_path, '圣遗物登记表.xlsx')
-remove_screenshot = bool(config['common']['remove_screenshot'])
+remove_screenshot = config['common']['remove_screenshot'] == '1'
 
 if not os.path.exists(full_path):
     dic1 = {'圣遗物名称': [],

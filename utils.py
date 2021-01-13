@@ -1,4 +1,5 @@
 import numpy as np
+from fuzzywuzzy.fuzz import partial_ratio
 import cv2
 import sys
 import base64
@@ -171,13 +172,16 @@ def get_stat(img, access_token, date):
                     '祭水之人', '武人', '守护之心', '祭雷之人', '流放者', '行者之心', '炽烈的炎之魔女', '角斗士的终幕礼',
                     '如雷的盛怒', '冰风迷途的勇士', '染血的骑士道', '昔日宗室之仪', '沉沦之心', '悠古的磐岩',
                     '翠绿之影', '流浪大地的乐团', '逆飞的流星', '平息鸣雷的尊者', '渡过烈火的贤人', '被怜爱的少女']
-        loc = [i in set_list for i in result].index(True)
-        return loc
+        # loc = [i in set_list for i in result].index(True)
+        for i in result:
+            for j in set_list:
+                if partial_ratio(i, j) > 95:
+                    return result.index(i)
 
     def get_index(lst, item):
         return [index for (index, value) in enumerate(lst) if value == item]
 
-    def get_vice_stat_index(result):
+    def get_vice_stat_index(result, set_loc):
         """
         判断圣遗物副词条所在位置
         :param result: OCR结果列表
@@ -185,14 +189,22 @@ def get_stat(img, access_token, date):
         """
         stat_list = ['攻击力', '生命值', '防御力', '元素精通', '元素充能效率', '暴击率', '暴击伤害', '风元素伤害加成', '火元素伤害加成',
                      '水元素伤害加成', '雷元素伤害加成', '冰元素伤害加成', '岩元素伤害加成' '物理伤害加成']
-        loc = get_index([i.split('+')[0] in stat_list for i in result], True)[1:]
-        return loc
+        # loc = get_index([i.split('+')[0] in stat_list for i in result], True)[1:]
+        loc = []
+        ptr = 0
+        for i in result[:set_loc]:
+            for j in stat_list:
+                if partial_ratio(i, j) > 95:
+                    loc.append(ptr)
+                    break
+            ptr += 1
+        return loc[1:]
 
     if response:
         # print(response.json())
         result = response.json()['words_result']
         result = [str(i['words']).replace('·', '').replace(':', '') for i in result]
-
+        # print(result)
         artifact = Artifact(result[0])
         artifact.set_pieces = result[1]
         artifact.main_stat = result[2]
@@ -200,8 +212,9 @@ def get_stat(img, access_token, date):
         artifact.star = len(result[4])
         artifact.lv = int(result[5])
 
-        vice_stat_index = get_vice_stat_index(result)
         set_list_index = get_set_list_index(result)
+        vice_stat_index = get_vice_stat_index(result, set_list_index)
+
         artifact.vice_stat0 = result[vice_stat_index[0]].split('+')[0]
         artifact.vice_stat0_value = str(result[vice_stat_index[0]].split('+')[1])
         artifact.vice_stat1 = result[vice_stat_index[1]].split('+')[0]
