@@ -42,9 +42,17 @@ def add_processed_file(file_name):
         f.write('\n')
 
 
+def add_ignored_file(file_name):
+    with open('ignored_file.txt', 'a') as f:
+        f.write(file_name)
+        f.write('\n')
+
+
 def load_processed_file():
     processed_item = []
     for line in open('processed_file.txt', 'r'):
+        processed_item.append(line.strip('\n'))
+    for line in open('ignored_file.txt', 'r'):
         processed_item.append(line.strip('\n'))
     return processed_item
 
@@ -52,6 +60,7 @@ def load_processed_file():
 def img_crop(img):
     """
     从图片中裁剪圣遗物面板
+    *使用边缘检测后的顶点坐标*
     :param img: 输入图像向量， 默认(1920, 1080, 3)
     :return:  输出图像向量， 大小约为(810, 490, 3)， 状态位，1为有效
     """
@@ -92,9 +101,77 @@ def img_crop(img):
         return img, 0
 
 
+def img_crop_2(img):
+    """
+    从图片中裁剪圣遗物面板
+    *使用边缘检测宽度，如宽度符合条件而高度不符合则使用固定高度*
+    :param img: 输入图像向量， 默认(1920, 1080, 3)
+    :return:  输出图像向量， 大小约为(810, 490, 3)， 状态位，1为有效
+    """
+    # assert img.shape[1] / img.shape[0] == 1920 / 1080
+
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    img = cv2.GaussianBlur(img, (3, 3), 0)
+    edges = cv2.Canny(gray, 50, 150, apertureSize=3)
+    minLineLength = 100
+    maxLineGap = 50
+    lines = cv2.HoughLinesP(edges, 1, np.pi / 180, 100, minLineLength, maxLineGap)
+
+    def distance(x1, x2, y1, y2):
+        return sqrt(abs((abs(x2 - x1) ** 2 - abs(y2 - y1) ** 2)))
+
+    x_min = sys.maxsize
+    x_max = 0
+    y_min = sys.maxsize
+    y_max = 0
+    for line in lines:
+        for x1, y1, x2, y2 in line:
+            if distance(x1, x2, y1, y2) > 320:
+                x_min = min(x_min, x1, x2)
+                x_max = max(x_max, x1, x2)
+                y_min = min(y_min, y1, y2)
+                y_max = max(y_max, y1, y2)
+
+    y_len = y_max - y_min
+    x_len = x_max - x_min
+    if 500 > x_len > 480:
+        if y_len > 500:
+            return img[y_min:y_max, x_min:x_max], 1
+        else:
+            # cv2.imshow('test', img[y_min:y_min+800, x_min:x_max])
+            # cv2.waitKey()
+            # cv2.destroyAllWindows()
+            return img[y_min:y_min + 800, x_min:x_max], 1
+    else:
+        return img, 0
+
+
 def image_to_base64(img_np):
     image = cv2.imencode('.jpg', img_np)[1].tostring()
     return base64.b64encode(image)
+
+
+def compute_initial_score(stat, value):
+    percentage_atk = ['4.1%', '4.7%', '5.3%', '5.8%']
+    value_atk = ['14', '16', '18', '19']
+    crit_rate = ['2.7%', '3.1%', '3.5%', '3.9%']
+    crit_dmg = ['5.4%', '6.2%', '7.0%', '7.8%']
+    recharge_rate = ['4.5%', '5.2%', '5.8%', '6.5%']
+    if stat == '暴击率':
+        if value in crit_rate:
+            return crit_rate.index(value) * 0.4 + 2
+    elif stat == '暴击伤害':
+        if value in crit_dmg:
+            return crit_dmg.index(value) * 0.4 + 2
+    elif stat == '攻击力':
+        if value in percentage_atk:
+            return percentage_atk.index(value) * 0.2 + 1
+        if value in value_atk:
+            return value_atk.index(value) * 0.1 + 0.5
+    elif stat == '元素充能效率':
+        if value in recharge_rate:
+            return recharge_rate.index(value) * 0.1 + 0.5
+    return 0
 
 
 class Artifact:
@@ -123,6 +200,14 @@ class Artifact:
     def __str__(self):
         return str(self.__dict__)
 
+    def get_initial_score(self):
+        score = 0
+        score += compute_initial_score(self.vice_stat0, self.vice_stat0_value)
+        score += compute_initial_score(self.vice_stat1, self.vice_stat1_value)
+        score += compute_initial_score(self.vice_stat2, self.vice_stat2_value)
+        score += compute_initial_score(self.vice_stat3, self.vice_stat3_value)
+        return round(score, 2)
+
     def add_to_excel(self, path):
         sheet = pd.read_excel(path)
         insert_column = {'圣遗物名称': self.name,
@@ -140,7 +225,8 @@ class Artifact:
                          '副属性4': self.vice_stat3,
                          '副属性4数值': self.vice_stat3_value,
                          '所属套装': self.set_name,
-                         '创建时间': self.date
+                         '创建时间': self.date,
+                         '得分': self.get_initial_score()
                          }
         sheet = sheet.append(insert_column, ignore_index=True)
         sheet.to_excel(path, index=False)
@@ -187,7 +273,7 @@ def get_stat(img, access_token, date):
         :param result: OCR结果列表
         :return: int 表示位置
         """
-        stat_list = ['攻击力', '生命值', '防御力', '元素精通', '元素充能效率', '暴击率', '暴击伤害', '风元素伤害加成', '火元素伤害加成',
+        stat_list = ['治疗加成', '攻击力', '生命值', '防御力', '元素精通', '元素充能效率', '暴击率', '暴击伤害', '风元素伤害加成', '火元素伤害加成',
                      '水元素伤害加成', '雷元素伤害加成', '冰元素伤害加成', '岩元素伤害加成' '物理伤害加成']
         # loc = get_index([i.split('+')[0] in stat_list for i in result], True)[1:]
         loc = []

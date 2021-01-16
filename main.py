@@ -45,18 +45,23 @@ for img in os.listdir(path):
             img = cv2_imread(img_path)
             img = cv2.resize(img, (1920, 1080))
 
-            img, have_artifact = img_crop(img)
+            img, have_artifact = img_crop_2(img)
+
+            # cv2.imshow('test', img)
+            # cv2.waitKey()
+            # cv2.destroyAllWindows()
 
             if have_artifact:
                 time.sleep(0.5)
                 artifact = get_stat(img, access_token, get_create_date(img_path))
                 name = artifact.add_to_excel(full_path)
-                print('登记新圣遗物：{}'.format(name))
+                print('登记新圣遗物：{}，得分：{}'.format(name, artifact.get_initial_score()))
                 artifact_cnt += 1
                 add_processed_file(file_name)
                 if remove_screenshot:
                     os.remove(img_path)
             else:
+                add_ignored_file(file_name)
                 print('图像{}未检测到有效圣遗物'.format(img_path))
 
 print('共登记{}件新圣遗物'.format(artifact_cnt))
