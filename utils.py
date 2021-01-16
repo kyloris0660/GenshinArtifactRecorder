@@ -170,7 +170,7 @@ def compute_initial_score(stat, value):
             return value_atk.index(value) * 0.1 + 0.5
     elif stat == '元素充能效率':
         if value in recharge_rate:
-            return recharge_rate.index(value) * 0.1 + 0.5
+            return recharge_rate.index(value) * 0.2 + 1
     return 0
 
 
