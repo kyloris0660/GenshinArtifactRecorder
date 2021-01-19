@@ -225,8 +225,8 @@ class Artifact:
                          '副属性4': self.vice_stat3,
                          '副属性4数值': self.vice_stat3_value,
                          '所属套装': self.set_name,
-                         '创建时间': self.date,
-                         '得分': self.get_initial_score()
+                         '得分': self.get_initial_score(),
+                         '创建时间': self.date
                          }
         sheet = sheet.append(insert_column, ignore_index=True)
         sheet.to_excel(path, index=False)

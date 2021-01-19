@@ -26,6 +26,7 @@ if not os.path.exists(full_path):
             '副属性4': [],
             '副属性4数值': [],
             '所属套装': [],
+            '得分': [],
             '创建时间': []
             }
     df = pd.DataFrame(dic1)
@@ -55,7 +56,8 @@ for img in os.listdir(path):
                 time.sleep(0.5)
                 artifact = get_stat(img, access_token, get_create_date(img_path))
                 name = artifact.add_to_excel(full_path)
-                print('登记新圣遗物：{}，得分：{}'.format(name, artifact.get_initial_score()))
+                print('登记新圣遗物：{}，分类：{}，主词条：{}，副词条得分：{}'.format(name, artifact.set_pieces, artifact.main_stat,
+                                                               artifact.get_initial_score()))
                 artifact_cnt += 1
                 add_processed_file(file_name)
                 if remove_screenshot:
