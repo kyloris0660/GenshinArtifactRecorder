@@ -44,13 +44,10 @@ for img in os.listdir(path):
             file_name = img
             img_path = os.path.join(path, img)
             img = cv2_imread(img_path)
-            img = cv2.resize(img, (1920, 1080))
+            resized_width = int(img.shape[1] / (img.shape[0] / 1080))
+            img = cv2.resize(img, (resized_width, 1080))
 
-            img, have_artifact = img_crop_2(img)
-
-            # cv2.imshow('test', img)
-            # cv2.waitKey()
-            # cv2.destroyAllWindows()
+            img, have_artifact = img_crop_3(img)
 
             if have_artifact:
                 time.sleep(0.5)

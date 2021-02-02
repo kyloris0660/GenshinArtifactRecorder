@@ -146,6 +146,25 @@ def img_crop_2(img):
         return img, 0
 
 
+def img_crop_3(img):
+    """
+    从图片中裁剪圣遗物面板
+    *16：9屏幕特攻，直接匹配像素值*
+    :param img: 输入图像向量， 限定为(1920, 1080, 3)
+    :return:  输出图像向量&状态位，1为有效
+    """
+    feature_img = cv2_imread('FeatureImg.png')
+    if (img[1010:1030, 1600:1750] == feature_img).all():
+        return img[100:800, 1290:1780], 1
+    else:
+        test_area = img[510:620, 1060:1160]
+        unique = list(np.unique(test_area.reshape(-1, 3), axis=0, return_counts=False)[0])
+        if unique == [216, 229, 236]:
+            return img[110:800, 714:1200], 1
+        else:
+            return img, 0
+
+
 def image_to_base64(img_np):
     image = cv2.imencode('.jpg', img_np)[1].tostring()
     return base64.b64encode(image)
