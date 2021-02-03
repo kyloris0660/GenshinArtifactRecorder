@@ -1,5 +1,6 @@
 import numpy as np
 from fuzzywuzzy.fuzz import partial_ratio
+from skimage.metrics import structural_similarity
 import cv2
 import sys
 import base64
@@ -154,7 +155,7 @@ def img_crop_3(img):
     :return:  输出图像向量&状态位，1为有效
     """
     feature_img = cv2_imread('FeatureImg.png')
-    if (img[1010:1030, 1600:1750] == feature_img).all():
+    if structural_similarity(img[1010:1030, 1600:1750], feature_img, multichannel=True) >= 0.99:
         return img[100:800, 1290:1780], 1
     else:
         test_area = img[510:620, 1060:1160]

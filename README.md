@@ -8,6 +8,13 @@
 
 文字识别调用百度AI的api。
 
+## 使用说明
+
+* Path及参数记录于`config.ini`。
+* 使用例：`python main.py`
+* 单一圣遗物面板使用例：`python process_croped_img.py your/full/path/xxx.png`
+
+
 ## 输出excel示例
 
 | 圣遗物名称     | 圣遗物类型 | 主属性         | 主属性数值 | 星级 | 等级 | 副属性1  | 副属性1数值 | 副属性2 | 副属性2数值 | 副属性3  | 副属性3数值 | 副属性4 | 副属性4数值 | 所属套装 | 创建时间   | 得分 |
@@ -43,6 +50,7 @@ recharge_rate = ['4.5%', '5.2%', '5.8%', '6.5%'] # 元素充能效率，权重 1
   * pandas
   * numpy
   * fuzzywuzzy
+  * scikit-image
 * 百度AI的access_token
 
 
