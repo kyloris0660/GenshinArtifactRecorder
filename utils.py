@@ -281,7 +281,7 @@ def get_stat(img, access_token, date):
         # loc = [i in set_list for i in result].index(True)
         for i in result:
             for j in set_list:
-                if partial_ratio(i, j) > 95:
+                if partial_ratio(i, j) > 80:
                     return result.index(i)
 
     def get_index(lst, item):
