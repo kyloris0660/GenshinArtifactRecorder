@@ -316,20 +316,25 @@ def get_stat(img, access_token, date):
         artifact.main_stat = result[2]
         artifact.main_stat_value = result[3]
         artifact.star = len(result[4])
-        artifact.lv = int(result[5])
+
+        if result[5][0] == '+':
+            artifact.lv = int(result[5])
+        for item in result[5:]:
+            if '+' in item:
+                if artifact.vice_stat0 == '':
+                    artifact.vice_stat0 = item.split('+')[0]
+                    artifact.vice_stat0_value = str(item.split('+')[1])
+                elif artifact.vice_stat1 == '':
+                    artifact.vice_stat1 = item.split('+')[0]
+                    artifact.vice_stat1_value = str(item.split('+')[1])
+                elif artifact.vice_stat2 == '':
+                    artifact.vice_stat2 = item.split('+')[0]
+                    artifact.vice_stat2_value = str(item.split('+')[1])
+                elif artifact.vice_stat3 == '':
+                    artifact.vice_stat3 = item.split('+')[0]
+                    artifact.vice_stat3_value = str(item.split('+')[1])
 
         set_list_index = get_set_list_index(result)
-        vice_stat_index = get_vice_stat_index(result, set_list_index)
-
-        artifact.vice_stat0 = result[vice_stat_index[0]].split('+')[0]
-        artifact.vice_stat0_value = str(result[vice_stat_index[0]].split('+')[1])
-        artifact.vice_stat1 = result[vice_stat_index[1]].split('+')[0]
-        artifact.vice_stat1_value = str(result[vice_stat_index[1]].split('+')[1])
-        artifact.vice_stat2 = result[vice_stat_index[2]].split('+')[0]
-        artifact.vice_stat2_value = str(result[vice_stat_index[2]].split('+')[1])
-        if len(vice_stat_index) == 4:
-            artifact.vice_stat3 = result[vice_stat_index[3]].split('+')[0]
-            artifact.vice_stat3_value = str(result[vice_stat_index[3]].split('+')[1])
         artifact.set_name = result[set_list_index]
         artifact.date = date
 
