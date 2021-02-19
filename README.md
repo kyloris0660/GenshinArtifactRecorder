@@ -1,5 +1,9 @@
 # 原神圣遗物记录脚本
 
+## 建议使用
+
+[GenshinSpider](https://github.com/yllhwa/GenshinSpider)，更好的实现。
+
 ## 说明
 
 将图像或视频中出现的圣遗物面板信息保存至excel文件中，用来记录我每天刷圣遗物本的掉落情况。
